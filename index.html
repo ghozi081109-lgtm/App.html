@@ -61,8 +61,8 @@
 
     <!-- ELEMEN AUDIO DARI FILE LOKAL HP -->
     <audio id="audioIdle" src="idle.mp3" loop></audio>
-    <audio id="audioGas" src="gas.mp3" loop></audio>
-    <audio id="audioLimit" src="limit.mp3" loop></audio>
+    <audio id="audioGas" src="gas1.mp3" loop></audio>
+    <audio id="audioLimit" src="limit1.mp3" loop></audio>
     <audio id="audioBackfire" src="backfire.mp3"></audio>
 
     <script>
@@ -87,7 +87,7 @@
             }
         }
 
-        // --- SAAT GAS DITEKAN (GEBER) ---
+                // --- SAAT GAS DITEKAN (GEBER) ---
         function startGas(e) {
             e.preventDefault();
             initAudio();
@@ -102,16 +102,23 @@
             rpmInterval = setInterval(() => {
                 if (!isGassing) return;
                 
-                rpm += 400;
-                if (rpm >= 10000) {
-                    rpm = 10000;
+                rpm += 500; // <-- Bisa dipercepat naiknya di sini (misal jadi 500)
+                
+                if (rpm >= 4000) { // <-- UBAH ANGKA INI! (Contoh: dari 10000 diturunin jadi 4000 RPM)
+                    rpm = 4000;    // <-- Sesuaikan sama angka maksimalnya
                     audioGas.pause();
-                    if (audioLimit.paused) audioLimit.play();
-                    statusInfo.innerText = "Status: ⚡ REV LIMITER (BREBET)!";
+                    
+                    audioLimit.loop = true; 
+                    if (audioLimit.paused) {
+                        audioLimit.play();
+                    }
+                    
+                    statusInfo.innerText = "Status: ⚡ REV LIMITER (PENDEK/MANJER)!";
                 }
                 rpmDisplay.innerText = rpm + " RPM";
             }, 50);
         }
+
 
         // --- SAAT GAS DILEPAS (SPRING BACK) ---
         function stopGas(e) {
