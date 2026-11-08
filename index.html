@@ -1,3 +1,160 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Motor Trail Simulator - Godbless</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; }
+        body {
+            margin: 0; padding: 0; background: #121212; color: #fff;
+            font-family: sans-serif; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; height: 100vh; overflow: hidden;
+        }
+        .container { text-align: center; width: 100%; max-width: 380px; padding: 20px; }
+        .dashboard {
+            background: #1e1e1e; border: 3px solid #333; border-radius: 15px;
+            padding: 20px; margin-bottom: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .rpm-title { font-size: 12px; color: #888; letter-spacing: 2px; margin-bottom: 5px; }
+        .rpm-value { font-size: 38px; font-weight: bold; color: #00ffcc; }
+        
+        .throttle-box {
+            background: #1e1e1e; border: 2px dashed #444; border-radius: 20px;
+            padding: 25px; margin-bottom: 20px;
+        }
+        .throttle-handle {
+            background: #ff5722; color: white; padding: 25px; border-radius: 12px;
+            font-size: 18px; font-weight: bold; box-shadow: 0 5px 15px rgba(255,87,34,0.4);
+        }
+        .throttle-handle:active { background: #e64a19; transform: scale(0.96); }
+        
+        .btn-backfire {
+            background: #d32f2f; color: white; border: none; width: 100%;
+            padding: 20px; border-radius: 12px; font-size: 18px; font-weight: bold;
+            box-shadow: 0 5px 15px rgba(211,47,47,0.4);
+        }
+        .btn-backfire:active { background: #b71c1c; transform: scale(0.98); }
+        .status-text { margin-top: 15px; font-size: 13px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="dashboard">
+            <div class="rpm-title">ENGINE RPM (MP3 MODE)</div>
+            <div id="rpmDisplay" class="rpm-value">0 RPM</div>
+        </div>
+
+        <div class="throttle-box">
+            <div id="throttleBtn" class="throttle-handle">
+                🏍️ TAHAN & GEBER GAS
+            </div>
+        </div>
+
+        <button id="backfireBtn" class="btn-backfire">
+            🔥 LEDAKAN (BACKFIRE)
+        </button>
+
+        <div id="statusInfo" class="status-text">Status: Mesin Idle</div>
+    </div>
+
+    <!-- ELEMEN AUDIO DARI FILE LOKAL HP -->
+    <audio id="audioIdle" src="idle.mp3" loop></audio>
+    <audio id="audioGas" src="gas.mp3" loop></audio>
+    <audio id="audioLimit" src="limit.mp3" loop></audio>
+    <audio id="audioBackfire" src="backfire.mp3"></audio>
+
+    <script>
+        const throttleBtn = document.getElementById('throttleBtn');
+        const backfireBtn = document.getElementById('backfireBtn');
+        const rpmDisplay = document.getElementById('rpmDisplay');
+        const statusInfo = document.getElementById('statusInfo');
+
+        const audioIdle = document.getElementById('audioIdle');
+        const audioGas = document.getElementById('audioGas');
+        const audioLimit = document.getElementById('audioLimit');
+        const audioBackfire = document.getElementById('audioBackfire');
+
+        let isGassing = false;
+        let rpm = 0;
+        let rpmInterval;
+
+        // Syarat wajib browser HP: Audio harus disentuh/dimainkan setelah ada interaksi pertama user
+        function initAudio() {
+            if (audioIdle.paused) {
+                audioIdle.play().catch(e => console.log("Waiting interaction"));
+            }
+        }
+
+        // --- SAAT GAS DITEKAN (GEBER) ---
+        function startGas(e) {
+            e.preventDefault();
+            initAudio();
+            isGassing = true;
+
+            audioIdle.pause();
+            if (audioGas.paused) audioGas.play();
+
+            statusInfo.innerText = "Status: Digeber!";
+
+            clearInterval(rpmInterval);
+            rpmInterval = setInterval(() => {
+                if (!isGassing) return;
+                
+                rpm += 400;
+                if (rpm >= 10000) {
+                    rpm = 10000;
+                    audioGas.pause();
+                    if (audioLimit.paused) audioLimit.play();
+                    statusInfo.innerText = "Status: ⚡ REV LIMITER (BREBET)!";
+                }
+                rpmDisplay.innerText = rpm + " RPM";
+            }, 50);
+        }
+
+        // --- SAAT GAS DILEPAS (SPRING BACK) ---
+        function stopGas(e) {
+            e.preventDefault();
+            isGassing = false;
+            clearInterval(rpmInterval);
+
+            audioGas.pause();
+            audioGas.currentTime = 0;
+            audioLimit.pause();
+            audioLimit.currentTime = 0;
+
+            let dropInterval = setInterval(() => {
+                rpm -= 800;
+                if (rpm <= 0) {
+                    rpm = 0;
+                    clearInterval(dropInterval);
+                    audioIdle.play();
+                    statusInfo.innerText = "Status: Mesin Idle";
+                }
+                rpmDisplay.innerText = rpm + " RPM";
+            }, 30);
+        }
+
+        // --- SAAT TOMBOL LEDAKAN DIPENCET ---
+        function triggerBackfire() {
+            initAudio();
+            audioBackfire.currentTime = 0; // Reset biar bisa di-spam
+            audioBackfire.play();
+
+            statusInfo.innerText = "Status: 🔥 DARR! (BACKFIRE)";
+            setTimeout(() => {
+                if (!isGassing) statusInfo.innerText = "Status: Mesin Idle";
+            }, 300);
+        }
+
+        // Event listener HP (Touch) & Laptop (Mouse jaga-jaga)
+        throttleBtn.addEventListener('touchstart', startGas);
+        throttleBtn.addEventListener('touchend', stopGas);
+        throttleBtn.addEventListener('mousedown', startGas);
+        throttleBtn.addEventListener('mouseup', stopGas);
+
+        backfireBtn.addEventListener('click', triggerBackfire);
+    </script>
+</body>
+</html>
